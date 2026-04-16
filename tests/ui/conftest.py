@@ -1,6 +1,6 @@
 import pytest
-from tests.ui.pages.login_page import LoginPage
-from tests.ui.pages.inventory_page import InventoryPage
+from ui.pages.login_page import LoginPage
+from ui.pages.inventory_page import InventoryPage
 
 
 @pytest.fixture

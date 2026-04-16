@@ -1,7 +1,7 @@
 .PHONY: install test-api test-ui test-e2e test-all report clean
 
 install:
-	pip install -r requirements-tests.txt
+	pip install -r requirements.txt
 	playwright install chromium
 
 test-api:

@@ -1,8 +1,8 @@
 import pytest
-from tests.ui.pages.login_page import LoginPage
-from tests.ui.pages.inventory_page import InventoryPage
-from tests.e2e.pages.cart_page import CartPage
-from tests.e2e.pages.checkout_page import CheckoutPage
+from ui.pages.login_page import LoginPage
+from ui.pages.inventory_page import InventoryPage
+from .pages.cart_page import CartPage
+from .pages.checkout_page import CheckoutPage
 
 
 @pytest.fixture
