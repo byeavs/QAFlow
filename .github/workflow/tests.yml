@@ -1,0 +1,183 @@
+name: QA Tests Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: "Which tests to run"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ui
+          - api
+          - e2e
+
+env:
+  PYTHON_VERSION: "3.11"
+  ALLURE_VERSION: "2.27.0"
+
+jobs:
+
+  # ────────────────────────────────────────────
+  api_tests:
+    name: "🔌 API Tests"
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.test_suite == 'all' ||
+      github.event.inputs.test_suite == 'api'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-tests.txt
+
+      - name: Run API tests
+        run: |
+          pytest tests/api \
+            -m api \
+            --alluredir=allure-results \
+            -v
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-api
+          path: allure-results
+          retention-days: 7
+
+  # ────────────────────────────────────────────
+  ui_tests:
+    name: "🖥 UI Tests"
+    runs-on: ubuntu-latest
+    needs: api_tests
+    if: >-
+      always() && (
+        github.event.inputs.test_suite == 'all' ||
+        github.event.inputs.test_suite == 'ui'
+      )
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-tests.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run UI tests
+        run: |
+          pytest tests/ui \
+            -m ui \
+            --alluredir=allure-results \
+            -v
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-ui
+          path: allure-results
+          retention-days: 7
+
+  # ────────────────────────────────────────────
+  e2e_tests:
+    name: "🔁 E2E Tests"
+    runs-on: ubuntu-latest
+    needs: [api_tests, ui_tests]
+    if: >-
+      always() && (
+        github.event.inputs.test_suite == 'all' ||
+        github.event.inputs.test_suite == 'e2e'
+      )
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-tests.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        run: |
+          pytest tests/e2e \
+            -m e2e \
+            --alluredir=allure-results \
+            -v
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e
+          path: allure-results
+          retention-days: 7
+
+  # ────────────────────────────────────────────
+  allure_report:
+    name: "📊 Allure Report"
+    runs-on: ubuntu-latest
+    needs: [api_tests, ui_tests, e2e_tests]
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all Allure results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          merge-multiple: true
+          path: allure-results
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Allure CLI
+        run: |
+          curl -o allure.tgz -Ls \
+            "https://github.com/allure-framework/allure2/releases/download/${{ env.ALLURE_VERSION }}/allure-${{ env.ALLURE_VERSION }}.tgz"
+          tar -zxvf allure.tgz
+          sudo mv allure-${{ env.ALLURE_VERSION }} /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
+
+      - name: Generate Allure report
+        run: allure generate allure-results --clean -o allure-report
+
+      - name: Upload Allure report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+          retention-days: 14
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: allure-report
