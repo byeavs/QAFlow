@@ -7,7 +7,6 @@ from tests.e2e.pages.checkout_page import CheckoutPage
 
 @pytest.fixture
 def sauce_pages(page):
-    """Все страницы SauceDemo в одном объекте."""
     return {
         "login": LoginPage(page),
         "inventory": InventoryPage(page),
@@ -18,7 +17,6 @@ def sauce_pages(page):
 
 @pytest.fixture
 def logged_in_sauce(page):
-    """Авторизованная сессия для E2E."""
     lp = LoginPage(page)
     lp.open()
     lp.login("standard_user", "secret_sauce")

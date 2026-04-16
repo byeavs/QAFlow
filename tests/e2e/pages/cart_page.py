@@ -1,7 +1,5 @@
 from playwright.sync_api import Page
-from ui.pages.base_page import BasePage
-
-URL = "https://www.saucedemo.com/cart.html"
+from tests.ui.pages.base_page import BasePage
 
 
 class CartPage(BasePage):
@@ -9,7 +7,6 @@ class CartPage(BasePage):
         super().__init__(page)
         self.cart_items = page.locator(".cart_item")
         self.checkout_button = page.locator("[data-test='checkout']")
-        self.continue_shopping = page.locator("[data-test='continue-shopping']")
 
     def get_item_count(self) -> int:
         return self.cart_items.count()

@@ -15,7 +15,6 @@ def inventory_page(page):
 
 @pytest.fixture
 def logged_in(page):
-    """Авторизованная сессия — используй в тестах где логин не проверяется."""
     lp = LoginPage(page)
     lp.open()
     lp.login("standard_user", "secret_sauce")
