@@ -1,5 +1,5 @@
 from playwright.sync_api import Page
-from tests.ui.pages.base_page import BasePage
+from ui.pages.base_page import BasePage
 
 URL = "https://www.saucedemo.com/cart.html"
 
