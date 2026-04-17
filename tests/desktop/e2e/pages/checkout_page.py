@@ -1,5 +1,5 @@
 from playwright.sync_api import Page
-from ui.pages.base_page import BasePage
+from tests.desktop.ui.pages.base_page import BasePage
 
 
 class CheckoutPage(BasePage):

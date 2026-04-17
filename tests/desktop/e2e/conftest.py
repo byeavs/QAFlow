@@ -1,6 +1,6 @@
 import pytest
-from ui.pages.login_page import LoginPage
-from ui.pages.inventory_page import InventoryPage
+from tests.desktop.ui.pages.login_page import LoginPage
+from tests.desktop.ui.pages.inventory_page import InventoryPage
 from .pages.cart_page import CartPage
 from .pages.checkout_page import CheckoutPage
 
