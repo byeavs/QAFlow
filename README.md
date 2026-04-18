@@ -144,3 +144,9 @@ make clean           # удалить артефакты
 - нет хранения истории прогонов, только последний Allure отчёт
 
 ---
+
+## Пример отчета
+
+Allure overview после прогона тестов:
+<img width="1258" height="678" alt="Снимок экрана — 2026-04-18 в 21 49 36" src="https://github.com/user-attachments/assets/9bd39859-8970-45cc-b745-1b64893cee88" />
+
