@@ -144,3 +144,8 @@ make clean           # remove artifacts
 - no run history storage, only the latest Allure report
 
 ---
+## Report Example
+
+Allure overview after test execution:
+
+<img width="1258" height="678" alt="Снимок экрана — 2026-04-18 в 21 49 36" src="https://github.com/user-attachments/assets/9bd39859-8970-45cc-b745-1b64893cee88" />
