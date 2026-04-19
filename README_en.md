@@ -1,6 +1,6 @@
 # QAFlow
 
-Test framework for a web application. Covers API, UI, E2E and mobile emulation.
+Test framework for a web application. Covers API, UI, E2E, mobile emulation and integration scenarios.
 
 Runs locally via Makefile or remotely via GitHub Actions — including from a Telegram bot.
 
@@ -9,18 +9,18 @@ Runs locally via Makefile or remotely via GitHub Actions — including from a Te
 ## How it works
 
 ```
-workflow_dispatch (all / ui / api / e2e / mobile)
+workflow_dispatch (all / ui / api / e2e / mobile / integration)
          |
-    api_tests
+    api_tests ──── integration_tests
          |
-    ui_tests ──── mobile_tests
+    ui_tests ────── mobile_tests
          |
     e2e_tests
          |
     allure_report → GitHub Pages
 ```
 
-Each job is independent. If API tests fail — UI and E2E still run (`if: always()`).
+Each job is independent. If API fails — UI and E2E still run (`if: always()`).
 Allure collects results from all jobs and publishes a single report.
 
 ---
@@ -40,11 +40,14 @@ tests/
 │   └── e2e/            # end-to-end flows
 │       ├── pages/
 │       └── test_flow.py
-└── mobile/             # Pixel 5 + iPhone 13 emulation
-    ├── pages/
-    ├── test_mobile_login.py
-    ├── test_mobile_navigation.py
-    └── test_mobile_ui.py
+├── mobile/             # Pixel 5 + iPhone 13 emulation
+│   ├── pages/
+│   ├── test_mobile_login.py
+│   ├── test_mobile_navigation.py
+│   └── test_mobile_ui.py
+└── integration/        # event-driven scenarios
+    ├── test_webhooks.py
+    └── test_event_flow.py
 ```
 
 ---
@@ -57,7 +60,7 @@ Target: jsonplaceholder.typicode.com
 - GET /users — status 200, response structure, record count
 - GET /users/{id} — field validation (id, email, name)
 - GET /users/999 — 404 for non-existent resource
-- POST /posts — creation, id and createdAt present in response
+- POST /posts — creation, id present in response
 - PUT /posts/1 — update, changed fields validated
 - DELETE /posts/1 — status 200, empty body
 - GET /posts?userId=1 — filtering, all records belong to userId=1
@@ -102,20 +105,48 @@ Each test runs on both devices automatically via `pytest_generate_tests`.
 
 ---
 
+### Integration (`tests/integration`)
+Target: httpbin.org (webhook endpoint simulation)
+
+Models an event-driven system: event delivery, routing, aggregation, suppression.
+
+**test_webhooks.py** — event delivery and validation:
+- POST event → status 200, payload delivered intact
+- routing headers (X-Alert-Channel, X-Team, X-Priority) reach the destination
+- deduplication — identical events produce identical fingerprint
+- suppression — suppressed=true and reason preserved in payload
+- aggregation — batch of N events delivered as a single package
+- retry — slow consumer responds within timeout (2–8 sec)
+- wrong method → 405
+- schema — missing required field detected before sending
+
+**test_event_flow.py** — chains and routing:
+- full chain: source → router (enrichment) → channel (delivery)
+- routing by severity: critical → pagerduty, warning → slack
+- lifecycle: fired → acknowledged → resolved, each transition delivered
+- multi-channel fan-out: one event delivered to two channels
+
+Coverage: positive, negative, edge cases, routing logic, state transitions.
+
+---
+
 ## Run
 
 ```bash
 pip install -r requirements.txt
 playwright install chromium
 
-make test-api        # API
-make test-ui         # UI
-make test-e2e        # E2E
-make test-mobile     # Mobile (Pixel 5 + iPhone 13)
-make test-all        # everything
+make test-api           # API
+make test-ui            # UI
+make test-e2e           # E2E
+make test-mobile        # Mobile (Pixel 5 + iPhone 13)
+make test-mobile-pixel  # Pixel 5 only
+make test-mobile-iphone # iPhone 13 only
+make test-integration   # Integration
+make test-all           # everything
 
-make report          # open Allure in browser
-make clean           # remove artifacts
+make report             # open Allure in browser
+make clean              # remove artifacts
 ```
 
 ---
@@ -130,6 +161,8 @@ make clean           # remove artifacts
 
 **`if: always()` in CI** — if API fails, UI and E2E still run. Full picture in one pipeline run instead of stopping at the first failure.
 
+**Integration via httpbin** — no real message broker, but event-driven patterns (routing, deduplication, suppression, fan-out) are verified on real HTTP requests. Easy to swap for a real endpoint.
+
 **Screenshot on failure** — via `pytest_runtest_makereport` hook. Automatic, no changes needed in tests. For mobile, the filename includes the device name.
 
 **No time.sleep** — `expect()` everywhere with Playwright's built-in retry.
@@ -141,6 +174,5 @@ make clean           # remove artifacts
 - tests run against public demo sites, not a real product
 - no parallel execution (pytest-xdist not connected)
 - mobile emulation runs on Chromium — not real Safari on iPhone
+- integration tests simulate event-driven system via httpbin, not a real broker
 - no run history storage, only the latest Allure report
-
----

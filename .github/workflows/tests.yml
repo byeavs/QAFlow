@@ -14,6 +14,7 @@ on:
           - api
           - e2e
           - mobile
+          - integration
 
 env:
   PYTHON_VERSION: "3.11"
@@ -174,12 +175,48 @@ jobs:
           name: allure-results-mobile
           path: allure-results
           retention-days: 7
+  # ────────────────────────────────────────────
+  integration_tests:
+    name: "🔗 Integration Tests"
+    runs-on: ubuntu-latest
+    needs: api_tests
+    if: >-
+      always() && (
+        github.event.inputs.test_suite == 'all' ||
+        github.event.inputs.test_suite == 'integration'
+      )
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Integration tests
+        run: |
+          pytest tests/integration \
+            -m integration \
+            --alluredir=allure-results \
+            -v
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-integration
+          path: allure-results
+          retention-days: 7
 
   # ────────────────────────────────────────────
   allure_report:
     name: "📊 Allure Report"
     runs-on: ubuntu-latest
-    needs: [api_tests, ui_tests, e2e_tests, mobile_tests]
+    needs: [api_tests, ui_tests, e2e_tests, mobile_tests, integration_tests]
     if: always()
 
     steps:

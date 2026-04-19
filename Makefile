@@ -1,7 +1,7 @@
-.PHONY: install test-api test-ui test-e2e test-mobile test-all report clean
+.PHONY: install test-api test-ui test-e2e test-mobile test-integration test-all report clean
 
 install:
-	pip install -r requirements-tests.txt
+	pip install -r requirements.txt
 	playwright install chromium
 
 test-api:
@@ -21,6 +21,9 @@ test-mobile-pixel:
 
 test-mobile-iphone:
 	pytest tests/mobile -m mobile -v --alluredir=allure-results -k "iPhone"
+
+test-integration:
+	pytest tests/integration -m integration -v --alluredir=allure-results
 
 test-all:
 	pytest tests/ -v --alluredir=allure-results
