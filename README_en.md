@@ -176,3 +176,5 @@ make clean              # remove artifacts
 - mobile emulation runs on Chromium — not real Safari on iPhone
 - integration tests simulate event-driven system via httpbin, not a real broker
 - no run history storage, only the latest Allure report
+
+---

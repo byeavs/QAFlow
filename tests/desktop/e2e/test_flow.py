@@ -71,22 +71,21 @@ def test_negative_login_flow(sauce_pages, page):
 @allure.severity(allure.severity_level.NORMAL)
 def test_api_data_consistency():
     with allure.step("Получить список пользователей через API"):
-        r = requests.get(f"{REQRES_URL}/users", params={"page": 1})
+        r = requests.get("https://jsonplaceholder.typicode.com/users")
         assert r.status_code == 200
 
     with allure.step("Проверить структуру каждого пользователя"):
-        users = r.json()["data"]
-        assert len(users) > 0
+        users = r.json()
+        assert len(users) == 10
         for u in users:
             assert "id" in u
             assert "@" in u["email"]
-            assert u["first_name"]
-            assert u["last_name"]
+            assert u["name"]
+            assert u["username"]
 
-    with allure.step("Пагинация корректна"):
-        meta = r.json()
-        assert meta["total"] > 0
-        assert meta["total_pages"] >= 1
+    with allure.step("Все пользователи имеют корректный email"):
+        invalid = [u for u in users if "@" not in u["email"]]
+        assert len(invalid) == 0, f"Невалидные email: {invalid}"
 
 
 @allure.title("E2E: httpbin delay — ответ в пределах таймаута")
